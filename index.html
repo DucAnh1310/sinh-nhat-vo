@@ -87,7 +87,16 @@
     function playMelody(){clearTimeout(musicTimer);if(!musicOn||document.hidden)return;while(nextNoteTime<audioContext.currentTime+.16)scheduleStep();musicTimer=setTimeout(playMelody,50);}
     function stopNotes(){clearTimeout(musicTimer);voices.forEach(v=>{try{v.stop();}catch{}});voices.clear();}
     function setupAudio(){audioContext=new(window.AudioContext||window.webkitAudioContext)();musicBus=audioContext.createGain();musicBus.gain.value=.65;const limiter=audioContext.createDynamicsCompressor();musicBus.connect(limiter);limiter.connect(audioContext.destination);noiseBuffer=audioContext.createBuffer(1,Math.ceil(audioContext.sampleRate*.2),audioContext.sampleRate);const data=noiseBuffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;}
-    const musicButton=document.getElementById('music');musicButton.title='Ngày của em ♫ — nhạc cute pop';musicButton.addEventListener('click',async()=>{try{if(!audioContext)setupAudio();await audioContext.resume();musicOn=!musicOn;musicButton.classList.toggle('playing',musicOn);musicButton.setAttribute('aria-pressed',String(musicOn));musicButton.setAttribute('aria-label',musicOn?'Tắt nhạc Ngày của em':'Bật nhạc Ngày của em');if(musicOn){musicStep=0;nextNoteTime=audioContext.currentTime+.06;playMelody();toast('Đang phát: Ngày của em · Cute pop ♫');}else stopNotes();}catch{musicOn=false;musicButton.classList.remove('playing');musicButton.setAttribute('aria-pressed','false');toast('Trình duyệt này chưa hỗ trợ phát nhạc.');}});
+    const musicButton=document.getElementById('music');musicButton.title='Ngày của em ♫ — nhạc cute pop';
+    let autoplayWanted=true;
+    function updateMusicButton(){musicButton.classList.toggle('playing',musicOn);musicButton.setAttribute('aria-pressed',String(musicOn));musicButton.setAttribute('aria-label',musicOn?'Tắt nhạc Ngày của em':'Bật nhạc Ngày của em');}
+    function removeMusicUnlock(){document.removeEventListener('pointerdown',unlockMusic);document.removeEventListener('keydown',unlockMusic);}
+    async function startMusic(silent=false){try{if(!audioContext)setupAudio();await audioContext.resume();if(musicOn||!autoplayWanted||audioContext.state!=='running')return;musicOn=true;removeMusicUnlock();updateMusicButton();musicStep=0;nextNoteTime=audioContext.currentTime+.06;playMelody();if(!silent)toast('Đang phát: Ngày của em · Cute pop ♫');}catch{if(!silent)toast('Trình duyệt này chưa hỗ trợ phát nhạc.');}}
+    function unlockMusic(event){if(event.target instanceof Element&&event.target.closest('#music'))return;if(autoplayWanted&&!musicOn)startMusic();}
+    musicButton.addEventListener('click',()=>{if(musicOn){autoplayWanted=false;musicOn=false;stopNotes();removeMusicUnlock();updateMusicButton();}else{autoplayWanted=true;startMusic();}});
+    document.addEventListener('pointerdown',unlockMusic);document.addEventListener('keydown',unlockMusic);
+    // Trình duyệt cho phép autoplay sẽ phát ngay; nếu bị chặn, lần chạm đầu sẽ mở khóa âm thanh.
+    startMusic(true);
     document.addEventListener('visibilitychange',()=>{if(!audioContext)return;if(document.hidden){stopNotes();audioContext.suspend().catch(()=>{});}else if(musicOn){audioContext.resume().then(()=>{nextNoteTime=audioContext.currentTime+.06;playMelody();}).catch(()=>{});}});
   </script>
 </body>
