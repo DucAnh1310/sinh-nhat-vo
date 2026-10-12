@@ -1,0 +1,11 @@
+{
+  "name": "birthday-for-my-love",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write index.html styles.css script.js README.md",
+    "check": "prettier --check index.html styles.css script.js README.md && node --check script.js"
+  },
+  "devDependencies": {
+    "prettier": "3.6.2"
+  }
+}
